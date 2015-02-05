@@ -1,0 +1,27 @@
+{
+  "id": "wordpress",
+  "cpus": 0.1,
+  "mem": 64.0,
+  "cmd": "/ghost-start",
+  "instances": 1,
+  "env": {
+  },
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "dockerfile/ghost"
+    },
+    "network": "HOST",
+    "portMappings": [
+      {
+        "containerPort": 2368,
+        "hostPort": 0,
+        "servicePort": 9000,
+        "protocol": "tcp"
+      }
+    ]
+  },
+  "ports": [
+    9000
+  ]
+}

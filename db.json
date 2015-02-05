@@ -1,0 +1,57 @@
+{
+  "id": "galera",
+  "cpus": 0.1,
+  "mem": 64.0,
+  "instances": 3,
+  "cmd": "/app/bin/boot",
+  "env": {
+    "MYSQL_USER": "admin",
+    "MYSQL_PASS": "lolznopass"
+  },
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "paulczar/percona-galera:latest",
+      "network": "BRIDGE",
+      "portMappings": [
+        {
+          "containerPort": 3306,
+          "hostPort": 0,
+          "servicePort": 3306,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 4444,
+          "hostPort": 0,
+          "servicePort": 4444,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 4567,
+          "hostPort": 0,
+          "servicePort": 4567,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 4568,
+          "hostPort": 0,
+          "servicePort": 4568,
+          "protocol": "tcp"
+        },
+        {
+          "containerPort": 4001,
+          "hostPort": 0,
+          "servicePort": 4001,
+          "protocol": "tcp"
+        }
+      ]
+    }
+  },
+  "ports": [
+    0,
+    0,
+    0,
+    0,
+    0
+  ]
+}
