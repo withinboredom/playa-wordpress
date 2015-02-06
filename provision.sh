@@ -9,7 +9,8 @@ then
     for node in "${masters[@]}"
     do
         rem $SSH_USER $node "sudo apt-get install -y at"
-        rem $SSH_USER $node "if [ ! -f chronos-2.1.0_mesos-0.14.0-rc4.tgz ]; then wget http://downloads.mesosphere.io/chronos/${cronos}.tgz;  tar xzf ${cronos}.tgz; fi"
+        echo "Installing chronos on node $node"
+        rem $SSH_USER $node "if [ ! -f chronos-2.1.0_mesos-0.14.0-rc4.tgz ]; then curl -sSfL http://downloads.mesosphere.io/chronos/${cronos}.tgz --output ${chronos}.tgz && tar xzf ${chronos}.tgz; fi"
         rem $SSH_USER $node "echo 'cd ${chronos}; ./bin/start-chronos.bash --master zk://localhost:2181/mesos --zk_hosts zk://localhost:2181/mesos --http_port 8081' > start-chronos.sh"
         rem $SSH_USER $node "chmod +x start-chronos.sh; at now -f start-chronos.sh"
     done
@@ -43,6 +44,9 @@ fi
 
 #TODO: Detect when consul comes online and join slaves to master
 
+echo "Waiting for consul to come online"
+sleep 60
+
 echo "Installing registrar"
 
 post $HOST services/registrator.json
@@ -58,7 +62,7 @@ do
     scp configuration/galera-haproxy.ctmpl $SSH_USER@$node:galera-haproxy.ctmpl
     scp configuration/start-galera-proxy.sh $SSH_USER@$node:galera-start.sh
     rem $SSH_USER $node "cp ${consulTemplateFile}/consul-template . && chmod +x galera-start.sh"
-    rem $SSH_USER $node "sudo sh -c 'at now < \"HOST=$HOST galera-start.sh\"'"
+    rem $SSH_USER $node "echo 'HOST=$HOST ./galera-start.sh' | sudo at now"
 done
 
 #post $HOST configuration/enable-docker.json

@@ -1,12 +1,13 @@
 {
-  "id": "galera",
+  "id": "/withinboredom/galera",
   "cpus": 0.1,
   "mem": 64.0,
   "instances": 3,
   "cmd": "/app/bin/boot",
   "env": {
     "MYSQL_USER": "admin",
-    "MYSQL_PASS": "lolznopass"
+    "MYSQL_PASS": "lolznopass",
+    "SERVICE_NAME": "galera"
   },
   "container": {
     "type": "DOCKER",

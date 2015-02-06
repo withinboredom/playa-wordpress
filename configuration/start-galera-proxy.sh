@@ -1,2 +1,2 @@
 #!/bin/sh
-consul-template -consul $HOST:8500 -template haproxy.ctmpl:/var/haproxy/haproxy.conf
+./consul-template -consul $HOST:8500 -template galera-haproxy.ctmpl:/var/haproxy/haproxy.conf
