@@ -11,7 +11,7 @@
   "container": {
     "type": "DOCKER",
     "docker": {
-      "image": "paulczar/percona-galera:latest",
+      "image": "withinboredom/docker-galera-mesos:latest",
       "network": "BRIDGE",
       "portMappings": [
         {

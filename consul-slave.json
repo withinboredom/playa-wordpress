@@ -1,0 +1,49 @@
+{
+  "id": "/withinboredom/consul-slave",
+  "args": [
+    "-server",
+    "-join", "${HOST}"
+  ],
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "progrium/consul",
+      "network": "BRIDGE",
+      "portMappings": [
+        {
+          "containerPort":8300
+        },
+        {
+          "containerPort": 8301
+        },
+        {
+          "containerPort": 8301,
+          "protocol": "udp"
+        },
+        {
+          "containerPort": 8302
+        },
+        {
+          "containerPort": 8302,
+          "protocol": "udp"
+        },
+        {
+          "containerPort": 8400
+        },
+        {
+          "containerPort": 8500
+        },
+        {
+          "containerPort": 53,
+          "protocol": "udp"
+        }
+      ]
+    }
+  },
+  "cpus": 0.1,
+  "mem": 25,
+  "instances": 2,
+  "dependencies": [
+    "/withinboredom/consul-master"
+  ]
+}

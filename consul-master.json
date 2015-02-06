@@ -1,0 +1,18 @@
+{
+  "id": "/withinboredom/consul-master",
+  "args": [
+    "-server",
+    "-advertise", "${HOST}",
+    "-bootstrap-expect", "3"
+  ],
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "progrium/consul",
+      "network": "HOST"
+    }
+  },
+  "cpus": 0.1,
+  "mem": 25,
+  "instances": 1
+}
