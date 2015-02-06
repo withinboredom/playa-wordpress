@@ -1,0 +1,11 @@
+global
+    daemon
+    maxconn 4
+
+defaults
+    mode mode
+    timeout 5
+
+listen http-in
+    bind *:3306{{range service "galera"}}
+    server {{.Node}} {{.Address}}:{{.Port}}{{end}}

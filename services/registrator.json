@@ -1,0 +1,30 @@
+{
+  "id": "/withinboredom/registrator",
+  "args": [
+    "-ip", "${HOST}",
+    "consul://${HOST}:8500/services"
+  ],
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "progrium/registrator",
+      "network": "HOST"
+    },
+    "volumes": [
+      {
+        "containerPath": "/tmp/docker.sock",
+        "hostPath": "/var/run/docker.sock",
+        "mode": "RW"
+      }
+    ]
+  },
+  "cpus": 0.1,
+  "mem": 25,
+  "instances": ${INSTANCES},
+  "constraints": [
+    ["hostname", "UNIQUE"]
+  ],
+  "dependencies": [
+    "/withinboredom/consul-master"
+  ]
+}

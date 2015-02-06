@@ -1,0 +1,8 @@
+{
+  "id": "enable-json",
+  "cmd": "echo 'docker,mesos' > /etc/mesos-slave/containerizers && echo '5mins' > /etc/mesos-slave/executor_registration_timeout && service mesos-slave restart",
+  "instances": ${INSTANCES},
+  "constraints": [
+    ["hostname", "UNIQUE"]
+  ]
+}

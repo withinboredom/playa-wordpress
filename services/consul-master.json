@@ -14,5 +14,8 @@
   },
   "cpus": 0.1,
   "mem": 25,
-  "instances": 1
+  "instances": ${INSTANCES},
+  "constraints": [
+    ["hostname", "UNIQUE"]
+  ]
 }
