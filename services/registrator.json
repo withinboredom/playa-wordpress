@@ -2,7 +2,7 @@
   "id": "/withinboredom/registrator",
   "args": [
     "-ip", "${HOST}",
-    "consul://${HOST}:8500/services"
+    "consul://${HOST}:8500"
   ],
   "container": {
     "type": "DOCKER",
