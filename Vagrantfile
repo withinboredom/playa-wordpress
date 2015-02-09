@@ -14,10 +14,10 @@ Vagrant.configure(2) do |config|
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = "ubuntu/trusty64"
 
-  config.vm.provider "virtualbox" do |v|
-    v.customize ["modifyvm", :id, "--memory", 256]
-    v.customize ["modifyvm", :id, "--cpus", 2]
-  end
+  #config.vm.provider "virtualbox" do |v|
+    #v.customize ["modifyvm", :id, "--memory", 256]
+    #v.customize ["modifyvm", :id, "--cpus", 2]
+  #end
 
   MASTER_COUNT=3
   SLAVE_COUNT=4

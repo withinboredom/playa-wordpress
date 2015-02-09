@@ -181,6 +181,7 @@ else
     configure_slave_services
     echo "${lightblue}Configuring ${reset}${red}slave ip${reset}${lightblue} for ${1} node${reset}"
     configure_slave_ip
+    configure_docker
     echo "${lightblue}Starting ${reset}${red}slave${reset}${lightblue} for ${1} node${reset}"
     start_slave
     echo "${lightblue}Setting slave type for ${1} node${reset}"
