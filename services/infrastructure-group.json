@@ -1,0 +1,105 @@
+{
+  "id": "/sphere",
+  "groups": [
+    {
+      "id": "/sphere/name-resolution",
+      "apps": [
+        {
+          "id": "/sphere/consul-master",
+          "args": [
+            "-server",
+            "-advertise", "${MASTER-0}",
+            "-bootstrap-expect", "3"
+          ],
+          "container": {
+            "type": "DOCKER",
+            "docker": {
+              "image": "progrium/consul",
+              "network": "HOST"
+            }
+          },
+          "cpus": 0.25,
+          "mem": 25,
+          "instances": 1,
+          "constraints": [
+            ["slave-type", "CLUSTER", "master"]
+          ]
+        },
+        {
+          "id": "/sphere/consul-slave",
+          "args": [
+            "-server",
+            "-join", "${MASTER-0}"
+          ],
+          "container": {
+            "type": "DOCKER",
+            "docker": {
+              "image": "progrium/consul",
+              "network": "HOST"
+            }
+          },
+          "cpus": 0.25,
+          "mem": 25,
+          "instances": 2,
+          "constraints": [
+            ["slave-type", "CLUSTER", "master"]
+          ],
+          "dependencies": [
+            "/sphere/consul-master"
+          ]
+        },
+        {
+          "id": "/sphere/consul-node",
+          "args": [
+            "-join", "${MASTER-0}"
+          ],
+          "container": {
+            "type": "DOCKER",
+            "docker": {
+              "image": "progrium/consul",
+              "network": "HOST"
+            }
+          },
+          "cpus": 0.1,
+          "mem": 25,
+          "instances": ${INSTANCES},
+          "constraints": [
+                ["slave-type", "CLUSTER", "slave"]
+          ],
+          "dependencies": [
+                "/sphere/consul-slave"
+          ]
+        },
+        {
+          "id": "/sphere/registrator",
+          "args": [
+            "consul://$HOST:8500"
+          ],
+          "container": {
+            "type": "DOCKER",
+            "docker": {
+              "image": "progrium/registrator",
+              "network": "HOST"
+            },
+            "volumes": [
+              {
+                "containerPath": "/tmp/docker.sock",
+                "hostPath": "/var/run/docker.sock",
+                "mode": "RW"
+              }
+            ]
+          },
+          "cpus": 0.2,
+          "mem": 25,
+          "instances": ${INSTANCES},
+          "constraints": [
+                ["slave-type", "CLUSTER", "slave"]
+          ],
+          "dependencies": [
+            "/sphere/consul-node"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -2,6 +2,37 @@
 
 source config.sh
 
+function provision () {
+    ip=$1
+    type=$2
+    counter=$3
+
+    scp ~/.ssh/id_rsa.pub ${SSH_USER}@${ip}:~/pub.key
+    rem $SSH_USER $ip "cat ~/pub.key | tee -a ~/.ssh/authorized_keys && mkdir provisioning"
+
+    scp -r ./* $SSH_USER@$ip:~/provisioning
+    rem $SSH_USER $ip "cd provisioning && ./pre-provision.sh ${type} ${counter}"
+}
+
+echo "${lightblue}Prepare to scp credentials to each server${reset}"
+counter=0
+for node in "${masters[@]}"
+do
+    provision ${node} "master" ${counter}
+    counter=$((counter+1))
+done
+
+echo "${lightblue}Now, the slaves${reset}"
+for node in "${slaves[@]}"
+do
+    provision ${node} "slave" ${counter}
+    counter=$((counter+1))
+done
+
+echo "Finished provisioning"
+
+exit 0
+
 if [ ! -z $INSTALL_CHRONOS ] && [ $INSTALL_CHRONOS = "y" ]
 then
     echo "installing chronos on master"
@@ -9,6 +40,7 @@ then
     for node in "${masters[@]}"
     do
         rem $SSH_USER $node "sudo apt-get install -y at"
+        echo
         echo "Installing chronos on node $node"
         rem $SSH_USER $node "if [ ! -f chronos-2.1.0_mesos-0.14.0-rc4.tgz ]; then curl -sSfL http://downloads.mesosphere.io/chronos/${cronos}.tgz --output ${chronos}.tgz && tar xzf ${chronos}.tgz; fi"
         rem $SSH_USER $node "echo 'cd ${chronos}; ./bin/start-chronos.bash --master zk://localhost:2181/mesos --zk_hosts zk://localhost:2181/mesos --http_port 8081' > start-chronos.sh"
@@ -65,4 +97,4 @@ do
     rem $SSH_USER $node "echo 'HOST=$HOST ./galera-start.sh' | sudo at now"
 done
 
-#post $HOST configuration/enable-docker.json
+#post $HOST configuration/enabl

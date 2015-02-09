@@ -16,6 +16,6 @@
   "mem": 25,
   "instances": ${INSTANCES},
   "constraints": [
-    ["hostname", "UNIQUE"]
+    ["slave_type", "CLUSTER", "master"]
   ]
 }

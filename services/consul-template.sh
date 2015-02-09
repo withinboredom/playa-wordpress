@@ -1,13 +1,13 @@
 {
-  "id": "/withinboredom/registrator",
+  "id": "/withinboredom/consul-template",
   "args": [
-    "-ip", "${HOST}",
-    "consul://${HOST}:8500"
+    "consul", "${HOST}",
+    "template", "stuff:more-stuff"
   ],
   "container": {
     "type": "DOCKER",
     "docker": {
-      "image": "progrium/registrator",
+      "image": "withinboredom/docker-consul-template",
       "network": "HOST"
     },
     "volumes": [
@@ -22,9 +22,10 @@
   "mem": 25,
   "instances": ${INSTANCES},
   "constraints": [
-    ["slave_type", "CLUSTER", "slave"]
+    ["slave_type", "CLUSTER", "master"],
+    ["hostname", "UNIQUE"]
   ],
   "dependencies": [
-    "/withinboredom/consul-master"
+    "/withinboredom/registrator"
   ]
 }
