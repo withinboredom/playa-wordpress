@@ -8,7 +8,7 @@
           "id": "/sphere/consul-master",
           "args": [
             "-server",
-            "-advertise", "${MASTER-0}",
+            "-advertise", "${MASTER}",
             "-bootstrap-expect", "3"
           ],
           "container": {
@@ -29,7 +29,7 @@
           "id": "/sphere/consul-slave",
           "args": [
             "-server",
-            "-join", "${MASTER-0}"
+            "-join", "${MASTER}"
           ],
           "container": {
             "type": "DOCKER",
@@ -51,7 +51,7 @@
         {
           "id": "/sphere/consul-node",
           "args": [
-            "-join", "${MASTER-0}"
+            "-join", "${MASTER}"
           ],
           "container": {
             "type": "DOCKER",
@@ -62,7 +62,7 @@
           },
           "cpus": 0.1,
           "mem": 25,
-          "instances": ${INSTANCES},
+          "instances": ${SLAVE_INSTANCES},
           "constraints": [
                 ["slave-type", "CLUSTER", "slave"]
           ],
@@ -91,7 +91,7 @@
           },
           "cpus": 0.2,
           "mem": 25,
-          "instances": ${INSTANCES},
+          "instances": ${SLAVE_INSTANCES},
           "constraints": [
                 ["slave-type", "CLUSTER", "slave"]
           ],

@@ -165,6 +165,7 @@ then
     configure_cluster
     echo "${lightblue}Configuring ${reset}${red}marathon${reset}${lightblue} for ${1} node${reset}"
     configure_marathon
+    configure_docker
     echo "${red}Starting master services for ${1} node${reset}"
     start_services
     echo "${lightblue}Configuring ${reset}${red}slave ip${reset}${lightblue} for ${1} node${reset}"

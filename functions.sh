@@ -44,11 +44,13 @@ zk_string () {
 
     for node in "${masters[@]}"
     do
-        if [ ! -z $exit ]
+        if [ -z $exit ]
         then
+            exit="zk://"
+        else
             exit="${exit},"
         fi
-        exit="${exit}zk://${node}:2181"
+        exit="${exit}${node}:2181"
     done
 
     exit="${exit}${endpoint}"

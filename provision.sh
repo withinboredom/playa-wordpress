@@ -11,7 +11,7 @@ function provision () {
     rem $SSH_USER $ip "cat ~/pub.key | tee -a ~/.ssh/authorized_keys && mkdir provisioning"
 
     scp -r ./* $SSH_USER@$ip:~/provisioning
-    rem $SSH_USER $ip "cd provisioning && ./pre-provision.sh ${type} ${counter}"
+    rem $SSH_USER $ip "cd provisioning && ./pre-provision.sh ${type} $ip ${counter}"
 }
 
 echo "${lightblue}Prepare to scp credentials to each server${reset}"
@@ -29,7 +29,9 @@ do
     counter=$((counter+1))
 done
 
-echo "Finished provisioning machines"
+echo "Finished provisioning machines, master-0 is ${masters[0]}"
+
+MASTER=${masters[0]}
 
 exit 0
 
