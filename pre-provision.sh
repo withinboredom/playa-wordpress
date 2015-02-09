@@ -2,7 +2,7 @@
 
 source config.sh
 
-
+zk=false
 
 if [ $1 == "master" ]
 then
@@ -10,6 +10,10 @@ then
 elif [ $1 == "slave" ]
 then
     master=false
+elif [ $1 == "zookeeper" ]
+then
+    master=true
+    zk=true
 else
     echo "Usage: ./pre-configure [master|slave] [ip-address] [node-number]"
     exit 1
@@ -17,6 +21,8 @@ fi
 
 ip=$2
 node_num=$3
+
+echo "${yellow}Provisioning node ${node_num}${reset}"
 
 function apt_ () {
     as_root env DEBIAN_FRONTEND=noninteractive apt-get "$@"
@@ -29,19 +35,26 @@ function as_root () {
     fi
 }
 function install_sources {
+    #as_root apt-get install python-software-properties
+    as_root add-apt-repository ppa:webupd8team/java -y
+    echo debconf shared/accepted-oracle-license-v1-1 select true |
+    as_root debconf-set-selections
+    echo debconf shared/accepted-oracle-license-v1-1 seen true |
+    as_root debconf-set-selections
+
     echo "deb http://repos.mesosphere.io/ubuntu/ trusty main" |
     as_root tee /etc/apt/sources.list.d/mesosphere.list
     as_root apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF
-    as_root apt-get update
 
     curl -sSL https://get.docker.com/ubuntu/ | as_root sh
+
+    as_root apt-get install -y python oracle-java7-installer curl unzip
 }
 
 function install_common_deps () {
     apt_ update
     apt_ upgrade -y
     install_sources
-    apt_ install -y curl unzip
 }
 
 function install_slave_deps () {
@@ -57,7 +70,7 @@ function configure_zk () {
     echo $zk_string |
     as_root tee /etc/mesos/zk
 
-    if [ master ]
+    if [ "$master" = true ]
     then
         echo $node_num |
         as_root tee /etc/zookeeper/conf/myid
@@ -77,6 +90,9 @@ function configure_zk () {
 
             counter=$((counter+1))
         done
+
+        as_root restart zookeeper
+        sleep 2
     fi
 }
 
@@ -85,6 +101,9 @@ function configure_cluster () {
 
     echo "2" |
     as_root tee /etc/mesos-master/quorum
+
+    echo "SPHERE Cluster" |
+    as_root tee /etc/mesos-master/cluster
 
     echo "$ip" |
     as_root tee /etc/mesos-master/ip
@@ -103,8 +122,9 @@ function configure_marathon () {
 
 function start_services () {
     as_root stop mesos-slave
-    as_root restart zookeeper
+    sleep 1
     as_root start mesos-master
+    sleep 2
     as_root start marathon
 }
 
@@ -126,6 +146,7 @@ function configure_slave_ip () {
 
 function start_slave () {
     as_root start mesos-slave
+    sleep 2
 }
 
 function configure_docker () {
@@ -147,20 +168,25 @@ function add_attribute () {
 
     echo "${value}" |
     as_root tee /etc/mesos-slave/attributes/${key}
-
-    as_root restart mesos-slave
 }
 
 echo "${lightblue}Installing common dependencies for ${1} node${reset}"
 
-install_common_deps
-
-if [ master ]
+if [ "$zk" = true ]
 then
-    echo "${lightblue}Installing dependencies for ${1} node${reset}"
-    install_master_deps
-    echo "${lightblue}Configuring ${reset}${red}zookeeper${reset}${lightblue} for ${1} node${reset}"
-    configure_zk
+    install_common_deps
+fi
+
+if [ "$master" = true ]
+then
+    if [ "$zk" = true ]
+    then
+        echo "${lightblue}Installing dependencies for ${1} node${reset}"
+        install_master_deps
+        echo "${lightblue}Configuring ${reset}${red}zookeeper${reset}${lightblue} for ${1} node${reset}"
+        configure_zk
+        exit 0
+    fi
     echo "${lightblue}Configuring ${reset}${red}cluster${reset}${lightblue} for ${1} node${reset}"
     configure_cluster
     echo "${lightblue}Configuring ${reset}${red}marathon${reset}${lightblue} for ${1} node${reset}"
@@ -170,11 +196,13 @@ then
     start_services
     echo "${lightblue}Configuring ${reset}${red}slave ip${reset}${lightblue} for ${1} node${reset}"
     configure_slave_ip
-    echo "${lightblue}Starting ${reset}${red}slave${reset}${lightblue} for ${1} node${reset}"
-    start_slave
     echo "${lightblue}Setting slave type for ${1} node${reset}"
     add_attribute "slave-type" "master"
+    echo "${lightblue}Starting ${reset}${red}slave${reset}${lightblue} for ${1} node${reset}"
+    start_slave
 else
+    install_common_deps
+    install_slave_deps
     echo "${lightblue}Configuring ${reset}${red}zookeeper${reset}${lightblue} for ${1} node${reset}"
     configure_zk
     echo "${lightblue}Configuring ${reset}${red}slave services${reset}${lightblue} for ${1} node${reset}"
@@ -182,8 +210,8 @@ else
     echo "${lightblue}Configuring ${reset}${red}slave ip${reset}${lightblue} for ${1} node${reset}"
     configure_slave_ip
     configure_docker
-    echo "${lightblue}Starting ${reset}${red}slave${reset}${lightblue} for ${1} node${reset}"
-    start_slave
     echo "${lightblue}Setting slave type for ${1} node${reset}"
     add_attribute "slave-type" "slave"
+    echo "${lightblue}Starting ${reset}${red}slave${reset}${lightblue} for ${1} node${reset}"
+    start_slave
 fi

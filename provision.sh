@@ -2,32 +2,109 @@
 
 source config.sh
 
-function provision () {
+function keys() {
     ip=$1
     type=$2
     counter=$3
 
     scp ~/.ssh/id_rsa.pub ${SSH_USER}@${ip}:~/pub.key
-    rem $SSH_USER $ip "cat ~/pub.key | tee -a ~/.ssh/authorized_keys && mkdir provisioning"
+    rem $SSH_USER $ip "cat ~/pub.key | tee -a ~/.ssh/authorized_keys"
+}
+
+function provision () {
+    ip=$1
+    type=$2
+    counter=$3
 
     scp -r ./* $SSH_USER@$ip:~/provisioning
+    rem $SSH_USER $ip "mkdir provisioning"
+    sleep 1
     rem $SSH_USER $ip "cd provisioning && ./pre-provision.sh ${type} $ip ${counter}"
 }
 
-echo "${lightblue}Prepare to scp credentials to each server${reset}"
-counter=1
-for node in "${masters[@]}"
-do
-    provision ${node} "master" ${counter}
-    counter=$((counter+1))
+function do_keys () {
+    for node in "${masters[@]}"
+    do
+        keys $node "master" 0
+    done
+
+    for node in "${slaves[@]}"
+    do
+        keys $node "slave" 0
+    done
+}
+
+function do_zookeepers () {
+    echo "${lightblue}Provisioning zookeeper nodes${reset}"
+    counter=1
+    for node in "${masters[@]}"
+    do
+        echo "${yellow}Starting provisioning of node: ${counter}${reset}"
+        provision ${node} "zookeeper" ${counter}
+        counter=$((counter+1))
+    done
+}
+
+function do_masters () {
+    echo "${lightblue}Provisioning master nodes${reset}"
+
+    counter=1
+    for node in "${masters[@]}"
+    do
+        echo "Provisioning master compute node"
+        provision ${node} "master" ${counter}
+        counter=$((counter+1))
+    done
+}
+
+function do_slaves () {
+    echo "${lightblue}Now, the slaves${reset}"
+    for node in "${slaves[@]}"
+    do
+        provision ${node} "slave" ${counter}
+        counter=$((counter+1))
+    done
+}
+
+zoo=true
+master=true
+slave=true
+
+while test $# -gt 0; do
+    case "$1" in
+        --no-zoo)
+            zoo=false
+            ;;
+        --no-master)
+            master=false
+            ;;
+        --no-slaves)
+            slave=false
+            ;;
+        --keys-only)
+            do_keys
+            exit 0
+            ;;
+        *)
+            break
+            ;;
+    esac
 done
 
-echo "${lightblue}Now, the slaves${reset}"
-for node in "${slaves[@]}"
-do
-    provision ${node} "slave" ${counter}
-    counter=$((counter+1))
-done
+if [ "$zoo" = true ]
+then
+    do_zookeepers
+fi
+
+if [ "$master" = true ]
+then
+    do_masters
+fi
+
+if [ "$slave" = true ]
+then
+    do_slaves
+fi
 
 echo "Finished provisioning machines, master-0 is ${masters[0]}"
 
