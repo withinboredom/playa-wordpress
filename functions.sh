@@ -48,7 +48,7 @@ zk_string () {
         then
             exit="${exit},"
         fi
-        exit="zk://${node}:2181"
+        exit="${exit}zk://${node}:2181"
     done
 
     exit="${exit}${endpoint}"

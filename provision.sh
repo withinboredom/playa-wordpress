@@ -15,7 +15,7 @@ function provision () {
 }
 
 echo "${lightblue}Prepare to scp credentials to each server${reset}"
-counter=0
+counter=1
 for node in "${masters[@]}"
 do
     provision ${node} "master" ${counter}
@@ -29,7 +29,7 @@ do
     counter=$((counter+1))
 done
 
-echo "Finished provisioning"
+echo "Finished provisioning machines"
 
 exit 0
 
@@ -97,4 +97,4 @@ do
     rem $SSH_USER $node "echo 'HOST=$HOST ./galera-start.sh' | sudo at now"
 done
 
-#post $HOST configuration/enabl
+#post $HOST configurat
