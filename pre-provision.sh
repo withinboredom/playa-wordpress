@@ -199,7 +199,7 @@ then
     echo "${lightblue}Setting slave type for ${1} node${reset}"
     add_attribute "slave-type" "master"
     echo "${lightblue}Starting ${reset}${red}slave${reset}${lightblue} for ${1} node${reset}"
-    start_slave
+    #start_slave
 else
     install_common_deps
     install_slave_deps
