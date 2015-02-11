@@ -13,13 +13,30 @@ function keys() {
 
 function provision () {
     ip=$1
-    type=$2
-    counter=$3
+    shift
+    type=$1
+    shift
+    num=$1
+    shift
+    script=$1
+    shift
 
-    scp -r ./* $SSH_USER@$ip:~/provisioning
-    rem $SSH_USER $ip "mkdir provisioning"
-    sleep 1
-    rem $SSH_USER $ip "cd provisioning && ./pre-provision.sh ${type} $ip ${counter}"
+    if [ ! -f ${num}.provisioned ]
+    then
+        rem $SSH_USER $ip "rm -rf provisioning"
+        rem $SSH_USER $ip "mkdir provisioning"
+        scp -r ./* $SSH_USER@$ip:~/provisioning
+        touch ${num}.provisioned
+    fi
+
+    if [ "$ASYNC" = true ]
+    then
+        echo "${red}ASYNC${reset}: ./${script} ${type} $ip ${num} $@"
+        rem_async $SSH_USER $ip "cd provisioning && ./${script} ${type} $ip ${num} $@"
+    else
+        echo "${red}SYNC${reset}: ./${script} ${type} $ip ${num} $@"
+        rem $SSH_USER $ip "cd provisioning && ./${script} ${type} $ip ${num} $@"
+    fi
 }
 
 function do_keys () {
@@ -34,36 +51,32 @@ function do_keys () {
     done
 }
 
-function do_zookeepers () {
-    echo "${lightblue}Provisioning zookeeper nodes${reset}"
-    counter=1
-    for node in "${masters[@]}"
-    do
-        echo "${yellow}Starting provisioning of node: ${counter}${reset}"
-        provision ${node} "zookeeper" ${counter}
-        counter=$((counter+1))
-    done
-}
-
 function do_masters () {
-    echo "${lightblue}Provisioning master nodes${reset}"
+    #echo "${lightblue}Provisioning master nodes${reset}"
 
     counter=1
+    script=$1
+    shift
     for node in "${masters[@]}"
     do
-        echo "Provisioning master compute node"
-        provision ${node} "master" ${counter}
+        #echo "Provisioning master compute node"
+        provision ${node} "master" ${counter} $script $@
         counter=$((counter+1))
     done
+    wait
 }
 
 function do_slaves () {
     echo "${lightblue}Now, the slaves${reset}"
+    script=$1
+    shift
+    count=$counter
     for node in "${slaves[@]}"
     do
-        provision ${node} "slave" ${counter}
-        counter=$((counter+1))
+        provision ${node} "slave" ${count} $script $@
+        count=$((count+1))
     done
+    wait
 }
 
 zoo=true
@@ -85,30 +98,71 @@ while test $# -gt 0; do
             do_keys
             exit 0
             ;;
+        --reset)
+            rm *.provisioned
+            do_masters "remote/reset.sh"
+            do_slaves "remote/reset.sh"
+            rm *.provisioned
+            exit 0
+            ;;
         *)
             break
             ;;
     esac
 done
 
-if [ "$zoo" = true ]
-then
-    do_zookeepers
-fi
-
 if [ "$master" = true ]
 then
-    do_masters
+    ASYNC=false
+    do_masters "remote/repos.sh"
+    ASYNC=true
+    do_masters "remote/mesosphere.sh"
+    zk_string "/mesos"
+    do_masters "remote/zk.sh" "$zk_string"
+    zk_conf
+    do_masters "remote/zk_master_conf.sh"
+    for item in ${zk_conf_string}
+    do
+        do_masters "remote/zk_master_cfg.sh" $item
+    done
+    do_masters "remote/quorum.sh" "$QUORUM"
+    do_masters "remote/mesos_ip.sh"
+    zk_string "/marathon"
+    do_masters "remote/marathon.sh"
+    do_masters "remote/marathon_zk.sh" "$zk_string"
+    do_masters "remote/enable_docker.sh"
+    do_masters "remote/set_cluster_name.sh" "SPHERE"
+    do_masters "remote/start_master_services.sh"
+    do_masters "remote/set_slave_ip.sh"
+    do_masters "remote/add_attribute.sh" "slave-type" "master"
+    sleep 3
+    do_masters "remote/start_slave.sh"
 fi
 
 if [ "$slave" = true ]
 then
-    do_slaves
+    zk_string "/mesos"
+    ASYNC=false
+    do_slaves "remote/repos.sh"
+    ASYNC=true
+    do_slaves "remote/mesos.sh"
+    do_slaves "remote/zk.sh" "$zk_string"
+    do_slaves "remote/stop_zk.sh"
+    do_slaves "remote/stop_mesos_master.sh"
+    do_slaves "remote/set_slave_ip.sh"
+    do_slaves "remote/enable_docker.sh"
+    do_slaves "remote/add_attribute.sh" "slave-type" "slave"
+    do_slaves "remote/start_slave.sh"
 fi
 
 echo "Finished provisioning machines, master-0 is ${masters[0]}"
 
 MASTER=${masters[0]}
+
+echo "${red}Waiting for mesos to come online${reset}"
+sleep 10
+
+post $MASTER services/infrastructure-group.json groups
 
 exit 0
 

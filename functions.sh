@@ -20,8 +20,11 @@ toUpper() {
 
 # Post a json file to marathon cluster
 post () {
-    curl -X POST -H "Content-Type: application/json" http://$1:8080/v2/apps \
+    curl -X POST -H "Content-Type: application/json" http://$1:8080/v2/$3 \
     -d"$(perl -p -i -e 's/\$\{([^}]+)\}/defined $ENV{$1} ? $ENV{$1} : $&/eg' < $2)"
+
+    echo "POSTed:"
+    echo "$(perl -p -i -e 's/\$\{([^}]+)\}/defined $ENV{$1} ? $ENV{$1} : $&/eg' < $2)"
 }
 
 template () {
@@ -29,7 +32,19 @@ template () {
 }
 
 rem () {
-    ssh $1@$2 $3
+    u=$1
+    shift
+    h=$1
+    shift
+    ssh $u@$h "$@"
+}
+
+rem_async() {
+    u=$1
+    shift
+    h=$1
+    shift
+    ssh $u@$h "$@" &
 }
 
 zk_string () {
@@ -56,4 +71,17 @@ zk_string () {
     exit="${exit}${endpoint}"
 
     zk_string=$exit
+}
+
+zk_conf () {
+    exit=""
+
+    c=1
+    for node in "${masters[@]}"
+    do
+        exit="${exit}server.${c}=${node}:2888:3888 "
+        c=$((c+1))
+    done
+
+    zk_conf_string=$exit
 }

@@ -5,7 +5,7 @@
       "id": "/sphere/name-resolution",
       "apps": [
         {
-          "id": "/sphere/consul-master",
+          "id": "consul-master",
           "args": [
             "-server",
             "-advertise", "${MASTER}",
@@ -22,11 +22,12 @@
           "mem": 25,
           "instances": 1,
           "constraints": [
+            ["hostname", "${MASTER}"],
             ["slave-type", "CLUSTER", "master"]
           ]
         },
         {
-          "id": "/sphere/consul-slave",
+          "id": "consul-slave",
           "args": [
             "-server",
             "-join", "${MASTER}"
@@ -42,14 +43,15 @@
           "mem": 25,
           "instances": 2,
           "constraints": [
-            ["slave-type", "CLUSTER", "master"]
+            ["slave-type", "CLUSTER", "master"],
+            ["hostname", "UNLIKE", "${MASTER}"]
           ],
           "dependencies": [
-            "/sphere/consul-master"
+            "consul-master"
           ]
         },
         {
-          "id": "/sphere/consul-node",
+          "id": "consul-node",
           "args": [
             "-join", "${MASTER}"
           ],
@@ -67,11 +69,11 @@
                 ["slave-type", "CLUSTER", "slave"]
           ],
           "dependencies": [
-                "/sphere/consul-slave"
+                "consul-slave"
           ]
         },
         {
-          "id": "/sphere/registrator",
+          "id": "registrator",
           "args": [
             "consul://$HOST:8500"
           ],
@@ -96,7 +98,7 @@
                 ["slave-type", "CLUSTER", "slave"]
           ],
           "dependencies": [
-            "/sphere/consul-node"
+            "consul-node"
           ]
         }
       ]
